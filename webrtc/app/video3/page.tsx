@@ -64,70 +64,17 @@ const Page = () => {
 
     const subscribe = () => {
         client.current.subscribe(
-            `/sub/signal`,
+            '/topic/greetings',
             async ({ body }) => {
                 const data = JSON.parse(body);
                 console.log(data);
-                switch (data.type) {
-                    case 'ENTER':
-                        if (data.sender !== sender) {
-                            console.log(data);
-                            if(!pcRef.current) return;
-                            const offer = await pcRef.current.createOffer();
-                            pcRef.current.setLocalDescription(offer);
-                            client.current.publish({
-                                destination: `/sub/signal`,
-                                body: JSON.stringify({
-                                    type: 'OFFER',
-                                    roomId: roomId,
-                                    sender,
-                                    offer,
-                                }),
-                            });
-                            console.log('오퍼전송');
-                        }
-                        break;
-
-                    case 'OFFER':
-                        if (data.sender !== sender) {
-                            console.log('오퍼수신');
-                            if(!pcRef.current) return;
-                            pcRef.current.setRemoteDescription(data.offer);
-                            const answer = await pcRef.current.createAnswer();
-                            pcRef.current.setLocalDescription(answer);
-                            client.current.publish({
-                                destination: `/sub/signal/${roomId}`,
-                                body: JSON.stringify({
-                                    type: 'ANSWER',
-                                    roomId: roomId,
-                                    sender,
-                                    answer,
-                                }),
-                            });
-                            console.log('엔서전송');
-                        }
-                        break;
-                    case 'ANSWER':
-                        if (data.sender !== sender) {
-                            console.log('엔서수신');
-                            myPeerConnection.setRemoteDescription(data.answer);
-                        }
-                        break;
-                    case 'ICE':
-                        if (data.sender !== sender) {
-                            console.log('아이스수신');
-                            myPeerConnection.addIceCandidate(data.ice);
-                        }
-                        break;
-                    default:
-                }
             },
         );
     };
 
     const connect = () => {
         client.current = new Client({
-            webSocketFactory: () => new SockJS(`http://192.168.35.47:8080/socket`),
+            webSocketFactory: () => new SockJS(`http://192.168.35.47:8080/gs-guide-websocket`),
             debug() {},
             onConnect: () => {
                 subscribe();

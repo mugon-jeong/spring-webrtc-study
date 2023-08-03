@@ -5,7 +5,7 @@ import {io, Socket} from "socket.io-client";
 const VideoCall = () => {
     // 소켓 연결 주소
     const socketURL = "";
-    // room name
+    //  name
     const roomName = "";
     // 소켓정보
     const socketRef = useRef<Socket>();

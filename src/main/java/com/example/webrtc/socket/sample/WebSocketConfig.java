@@ -9,8 +9,8 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 /**
  * resource index.html 테스트용 설정
  */
-//@Configuration
-//@EnableWebSocketMessageBroker
+@Configuration
+@EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     /**
      * 메모리 기반 메시지 브로커

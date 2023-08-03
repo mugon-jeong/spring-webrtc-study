@@ -16,8 +16,8 @@ import java.util.Set;
 
 // 기능 : WebRTC를 위한 시그널링 서버 부분으로 요청타입에 따라 분기 처리
 @Slf4j
-@Component
-public class SignalHandler extends TextWebSocketHandler {
+//@Component
+public class WebRTCSignalHandler extends TextWebSocketHandler {
     private final SessionRepository sessionRepositoryRepo = SessionRepository.getInstance();  // 세션 데이터 저장소
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final String MSG_TYPE_JOIN_ROOM = "join_room";

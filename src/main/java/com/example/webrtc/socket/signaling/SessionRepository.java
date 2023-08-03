@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 // 기능 : 웹소켓에 필요한 세션 정보를 저장, 관리 (싱글톤)
 @Slf4j
-@Component
+//@Component
 @NoArgsConstructor
 public class SessionRepository {
     private static SessionRepository sessionRepositoryRepo;

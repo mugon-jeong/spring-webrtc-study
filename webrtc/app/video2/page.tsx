@@ -1,21 +1,24 @@
 "use client"
 import React, {useEffect, useRef, useState} from 'react';
-import SockJS from 'sockjs-client';
-import {Client} from "@stomp/stompjs"
+import * as SockJS from 'sockjs-client';
+import {Client, Stomp} from "@stomp/stompjs"
 
 const Page = () => {
     const socketURL = "http://192.168.35.47:8080/signal"
+    const socketJS = new SockJS("http://192.168.35.47:8080/signal");
+    const client = new Client({
+        brokerURL: 'ws://localhost:8080/socket',
+    });
     const roomId = "roomA"
     const sender = "nickNameA"
     const [isConnect, setIsConnect] = useState(false);
-    const client = useRef<Client>();
     // 자신의 비디오
     const myVideoRef = useRef<HTMLVideoElement>(null);
     // peerConnection
     const pcRef = useRef<RTCPeerConnection>();
     const handleConnect = () => {
         console.log("handleConnect()")
-        connect()
+        client.activate();
         setIsConnect(true)
     }
     const handleDisconnect = () => {
@@ -38,7 +41,7 @@ const Page = () => {
 
             // 스트림을 peerConnection 등록
             stream.getTracks().forEach((track) => {
-                if(!pcRef.current){
+                if (!pcRef.current) {
                     return;
                 }
                 pcRef.current?.addTrack(track, stream);
@@ -63,16 +66,16 @@ const Page = () => {
     }
 
     const subscribe = () => {
-        client.current.subscribe(
+        client.subscribe(
             `/sub/signal`,
-            async ({ body }) => {
+            async ({body}) => {
                 const data = JSON.parse(body);
                 console.log(data);
                 switch (data.type) {
                     case 'ENTER':
                         if (data.sender !== sender) {
                             console.log(data);
-                            if(!pcRef.current) return;
+                            if (!pcRef.current) return;
                             const offer = await pcRef.current.createOffer();
                             pcRef.current.setLocalDescription(offer);
                             client.current.publish({
@@ -91,7 +94,7 @@ const Page = () => {
                     case 'OFFER':
                         if (data.sender !== sender) {
                             console.log('오퍼수신');
-                            if(!pcRef.current) return;
+                            if (!pcRef.current) return;
                             pcRef.current.setRemoteDescription(data.offer);
                             const answer = await pcRef.current.createAnswer();
                             pcRef.current.setLocalDescription(answer);
@@ -126,34 +129,23 @@ const Page = () => {
     };
 
     const connect = () => {
-        client.current = new Client({
-            webSocketFactory: () => new SockJS(`http://192.168.35.47:8080/socket`),
-            debug() {},
-            onConnect: () => {
-                subscribe();
-                client.current.publish({
-                    destination: `pub/signal`,
-                    // body: JSON.stringify({
-                    //     type: 'ENTER',
-                    //     roomId: roomId,
-                    //     sender,
-                    // }),
-                    body: JSON.stringify({message:"hi"}),
-                });
-            },
-            onStompError: (frame) => {
-                console.log(`Broker reported error: ${frame.headers.message}`);
-                console.log(`Additional details: ${frame.body}`);
-            },
+        client.connect({}, () => {
+            client.subscribe({
+                destination: 'sub/signal',
+            }, (response) => {
+                console.log("sub", response)
+            })
         });
-        client.current.activate();
     };
     const disconnect = () => {
-        client.current.deactivate();
+        client.disconnect();
     };
 
     const handleSend = () => {
-
+        client.publish({
+            destination: "pub/signal",
+            body: JSON.stringify({message: "send"})
+        });
     }
 
     useEffect(() => {
