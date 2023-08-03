@@ -59,9 +59,23 @@ const Page = () => {
         }
     }
 
-    useEffect(()=>{
+    const handleMuteMyVideo = () => {
+        const stream: MediaStream = myVideoRef.current.srcObject;
+        stream.getAudioTracks().forEach((track) => {
+            track.enabled = !track.enabled
+        })
+    }
+
+    const handleCamera = () => {
+        const stream: MediaStream = myVideoRef.current.srcObject;
+        stream.getVideoTracks().forEach((track) => {
+            track.enabled = !track.enabled
+        })
+    }
+
+    useEffect(() => {
         getMedia();
-    },[])
+    }, [])
 
     return (
         <>
@@ -82,6 +96,8 @@ const Page = () => {
                     ref={myVideoRef}
                     autoPlay
                 />
+                <button onClick={handleMuteMyVideo}>Mute</button>
+                <button onClick={handleCamera}>Camera</button>
             </div>
         </>
     );
