@@ -49,7 +49,7 @@ const Page = () => {
     }
 
     const handleMuteMyVideo = () => {
-        const stream: MediaStream = myVideoRef.current.srcObject;
+        const stream: MediaProvider = myVideoRef.current!.srcObject;
         stream.getAudioTracks().forEach((track) => {
             track.enabled = !track.enabled
         })
@@ -75,7 +75,7 @@ const Page = () => {
                             if(!pcRef.current) return;
                             const offer = await pcRef.current.createOffer();
                             pcRef.current.setLocalDescription(offer);
-                            client.current.publish({
+                            client.current!.publish({
                                 destination: `/sub/signal`,
                                 body: JSON.stringify({
                                     type: 'OFFER',

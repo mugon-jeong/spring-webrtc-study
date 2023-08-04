@@ -9,8 +9,8 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 /**
  * resource index.html 테스트용 설정
  */
-@Configuration
-@EnableWebSocketMessageBroker
+//@Configuration
+//@EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     /**
      * 메모리 기반 메시지 브로커
@@ -27,6 +27,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // websocket 연결을 위한 엔드포인트 등록
-        registry.addEndpoint("/gs-guide-websocket").setAllowedOriginPatterns("*");
+        registry.addEndpoint("/gs-guide-websocket").setAllowedOriginPatterns("*").withSockJS();
     }
 }
