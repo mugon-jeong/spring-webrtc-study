@@ -6,6 +6,7 @@ import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,7 +25,10 @@ public class SocketControllerSample2 {
     // 실시간으로 들어온 세션 감지하여 전체 세션 리스트 반환
     @MessageMapping("/room/{roomId}")
     @SendTo("/sub/room/{roomId}")
-    private String joinRoom(@DestinationVariable("roomId") String roomId, @Payload SocketMessage message) {
+    private String joinRoom(@DestinationVariable("roomId") String roomId, @Payload SocketMessage message, SimpMessageHeaderAccessor messageHeaderAccessor) {
+        // session
+        String session = (String) messageHeaderAccessor.getSessionAttributes().get("session");
+        log.info("Session: " + session);
         // roomId
         log.info("Joining room 1: {}", roomId);
         log.info("Joining room 2: {}", message);

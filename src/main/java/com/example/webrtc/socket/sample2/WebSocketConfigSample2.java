@@ -21,6 +21,7 @@ public class WebSocketConfigSample2 implements WebSocketMessageBrokerConfigurer 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/signal")
+                .addInterceptors(new HttpHandshakeInterceptor())
                 .setAllowedOriginPatterns("*")
                 .withSockJS();
     }
