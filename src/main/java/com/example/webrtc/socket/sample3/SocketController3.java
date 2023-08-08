@@ -3,9 +3,15 @@ package com.example.webrtc.socket.sample3;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.*;
 import org.springframework.stereotype.Controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @Slf4j
 @Controller
 public class SocketController3 {
+    Map<String, List<String>> rooms = new HashMap<String, List<String>>();
 
     // message types, used in signalling:
     // SDP Offer message
@@ -21,7 +27,7 @@ public class SocketController3 {
 
     @MessageMapping("/room/{roomId}")
     @SendTo("/sub/room/{roomId}")
-    private String joinRoom(@DestinationVariable("roomId") String roomId, @Header("simpSessionId") String sessionId, @Payload WebSocketMessage message) {
+    private String joinRoom(@DestinationVariable("roomId") String roomId,  @Payload WebSocketMessage message) {
         // roomId
         log.info("Joining room 1: {}", roomId);
         log.info("Joining room 2: {}", message);
