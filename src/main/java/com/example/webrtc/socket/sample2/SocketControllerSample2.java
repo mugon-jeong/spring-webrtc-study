@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.Set;
 
 @Slf4j
-@Controller
+//@Controller
 @RequiredArgsConstructor
 public class SocketControllerSample2 {
     // 테스트용 세션 리스트.
@@ -26,8 +26,8 @@ public class SocketControllerSample2 {
     @SendTo("/sub/room/{roomId}")
     private String joinRoom(@DestinationVariable("roomId") String roomId, @Payload SocketMessage message) {
         // roomId
-        log.info("Joining room 1: {}",roomId);
-        log.info("Joining room 2: {}",message);
+        log.info("Joining room 1: {}", roomId);
+        log.info("Joining room 2: {}", message);
         sessionIdList.add(message.sender);
         log.info("sessionIdList: {}", sessionIdList);
         return sessionIdList.stream().toList().get(0);

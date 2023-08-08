@@ -16,7 +16,7 @@ import java.util.Set;
 
 // 기능 : WebRTC를 위한 시그널링 서버 부분으로 요청타입에 따라 분기 처리
 @Slf4j
-//@Component
+@Component
 public class WebRTCSignalHandler extends TextWebSocketHandler {
     private final SessionRepository sessionRepositoryRepo = SessionRepository.getInstance();  // 세션 데이터 저장소
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -34,10 +34,10 @@ public class WebRTCSignalHandler extends TextWebSocketHandler {
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         try {
+            log.info("get Message : {}", message.getPayload());
             WebSocketMessage webSocketMessage = objectMapper.readValue(message.getPayload(), WebSocketMessage.class);
-            String userName = webSocketMessage.getSender();
-            String data = webSocketMessage.getData();
-            Long roomId = webSocketMessage.getRoomId();
+            String userName = webSocketMessage.getFrom();
+            String roomId = webSocketMessage.getRoomId();
             log.info("origin message INFO");
             log.info("session.ID : {}, getType : {}, getRoomId : {}", session.getId(), webSocketMessage.getType(), roomId);
             switch (webSocketMessage.getType()) {
@@ -50,12 +50,12 @@ public class WebRTCSignalHandler extends TextWebSocketHandler {
 
                         // 해당 챗룸이 존재하면
                         // 세션 젖아 1) : 방 안의 session List에 새로운 Client session 정보를 저장
-                        sessionRepositoryRepo.addClient(roomId, session);
+                        sessionRepositoryRepo.addClient(roomId, userName, session);
                     } else {
                         log.info("join 0 : 방 없음 : " + roomId);
                         // 해당 챗룸이 존재하지 않으면
                         // 세션 저장 1) : 새로운 방 정보와 새로운 Client session 정보를 저장
-                        sessionRepositoryRepo.addClientInNewRoom(roomId, session);
+                        sessionRepositoryRepo.addClientInNewRoom(roomId, userName, session);
                     }
                     log.info("join 2 : (join 후) Client List - \n {} \n", sessionRepositoryRepo.getClientList(roomId));
 
@@ -64,7 +64,7 @@ public class WebRTCSignalHandler extends TextWebSocketHandler {
 
                     log.info("join 3 : 지금 세션이 들어간 방 : {}", sessionRepositoryRepo.getRoomId(session));
 
-                    // 방안 참가자 중 자신을 제외한 나머지 사람들의 Session ID를 List로 저장
+                    // 방안 참가자 중 자신을 제외한 나머지 사람들의 user ID를 List로 저장
                     List<String> exportClients = new ArrayList<>();
                     Set<Map.Entry<String, WebSocketSession>> roomInfos = sessionRepositoryRepo.getClientList(roomId).entrySet();
                     for (Map.Entry<String, WebSocketSession> roomInfo : roomInfos) {
@@ -84,32 +84,34 @@ public class WebRTCSignalHandler extends TextWebSocketHandler {
                     sendMessage(session,
                             new WebSocketMessage().builder()
                                     .type("all_users")
-                                    .sender(userName)
-                                    .data(data)
+                                    .from(userName)
+                                    .roomId(roomId)
                                     .allUsers(exportClients)
                                     .candidate(webSocketMessage.getCandidate())
                                     .sdp(webSocketMessage.getSdp())
                                     .build());
                 }
-                case MSG_TYPE_OFFER -> {
-                }
-                case MSG_TYPE_ANSWER -> {
-                }
-                case MSG_TYPE_CANDIDATE -> {
+                case MSG_TYPE_OFFER,MSG_TYPE_ANSWER,MSG_TYPE_CANDIDATE -> {
                     if (sessionRepositoryRepo.hasRoom(roomId)) {
                         Map<String, WebSocketSession> clientList = sessionRepositoryRepo.getClientList(roomId);
-                        log.info("{} 5 : 보내는 사람 - {}, 받는 사람 - {}" + webSocketMessage.getType(), session.getId(), webSocketMessage.getReceiver());
+                        // 방안 참가자 중 자신을 제외한 나머지 사람들의 user ID를 List로 저장
+                        List<String> exportClients = new ArrayList<>();
+                        Set<Map.Entry<String, WebSocketSession>> roomInfos = sessionRepositoryRepo.getClientList(roomId).entrySet();
+                        for (Map.Entry<String, WebSocketSession> roomInfo : roomInfos) {
+                            // 자신 제외
+                            if (roomInfo.getValue() != session) {
+                                exportClients.add(roomInfo.getKey());
+                            }
+                        }
+                        log.info("{} 5 : 보내는 사람 - {}, 받는 사람 - {}", webSocketMessage.getType(), webSocketMessage.getFrom(), session.getId());
 
-                        if (clientList.containsKey(webSocketMessage.getReceiver())) {
-                            WebSocketSession ws = clientList.get(webSocketMessage.getReceiver());
+                        if (clientList.containsKey(webSocketMessage.getFrom())) {
+                            WebSocketSession ws = clientList.get(exportClients.get(0));
                             sendMessage(ws,
                                     new WebSocketMessage().builder()
                                             .type(webSocketMessage.getType())
-                                            .sender(session.getId()) // 보낸 사람
-                                            .receiver(webSocketMessage.getReceiver()) // 받을 사람
-                                            .data(data)
-                                            .offer(webSocketMessage.getOffer())
-                                            .answer(webSocketMessage.getAnswer())
+                                            .from(webSocketMessage.getFrom()) // 보낸 사람
+                                            .roomId(roomId)
                                             .candidate(webSocketMessage.getCandidate())
                                             .sdp(webSocketMessage.getSdp())
                                             .build());
