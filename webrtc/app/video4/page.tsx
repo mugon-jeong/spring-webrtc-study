@@ -4,6 +4,9 @@ import React, { useEffect, useRef, useState } from "react";
 import uuid from "react-uuid";
 import SockJS from "sockjs-client";
 const Page = () => {
+  const peerConnectionConfig = {
+    iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+  };
   const user = uuid().substring(0, 8);
   const roomId = "roomA";
   const [text, setText] = useState("");
@@ -41,12 +44,12 @@ const Page = () => {
           }
           console.log("recv candidate");
           client.current.publish({
-            destination: `/pub/room/${roomId}/ice`,
+            destination: `/pub/room/${roomId}`,
             body: JSON.stringify({
-              type: "ICE",
+              type: "CANDIDATE",
               roomId: roomId,
-              sender: user,
-              ice: e.candidate,
+              from: user,
+              candidate: e.candidate,
             }),
           });
         }
@@ -79,17 +82,6 @@ const Page = () => {
     });
   };
 
-  const sendHandler = () => {
-    if (!client.current) return;
-    client.current.send(
-      "/app/hello",
-      {},
-      JSON.stringify({
-        name: text,
-      })
-    );
-  };
-
   // peerA가 peerB에게 보내줄 sdp가 담긴 offer 생성
   const createOffer = async () => {
     console.log("createOffer");
@@ -104,11 +96,11 @@ const Page = () => {
       console.log("sent the offer");
       // offer 전달
       client.current.publish({
-        destination: `/pub/room/${roomId}/offer`,
+        destination: `/pub/room/${roomId}`,
         body: JSON.stringify({
           type: "OFFER",
           roomId: roomId,
-          sender: user,
+          from: user,
           sdp: sdp,
         }),
       });
@@ -133,12 +125,12 @@ const Page = () => {
       pcRef.current!.setLocalDescription(answerSdp);
       console.log("sent the answer");
       client.current.publish({
-        destination: `/pub/room/${roomId}/answer`,
+        destination: `/pub/room/${roomId}`,
         body: JSON.stringify({
-          type: "OFFER",
+          type: "ANSWER",
           roomId: roomId,
-          sender: user,
-          answer: answerSdp,
+          from: user,
+          sdp: answerSdp,
         }),
       });
     } catch (e) {
@@ -153,58 +145,53 @@ const Page = () => {
   const subscribe = () => {
     if (!client.current) return;
 
-    client.current!.subscribe(`/sub/room/${roomId}`, ({ body }) => {
-      // const data = JSON.parse(body);
-      console.log("Join Res", body);
-      // 기존 유저가 존재하면 offer 생성
-      if (body !== user) {
-        // remote description 등록
-        // answer 전송
-        createOffer();
-      }
-    });
-
-    client.current!.subscribe(`/sub/room/${roomId}/offer`, ({ body }) => {
-      const data = JSON.parse(body);
-      console.log("Get Offer" + data.sender + ":" + user);
-
-      // 내가 만든 오퍼가 아닐때
-      if (data.sender !== user) {
-        console.log("offer sdp", data.sdp);
-        // remote description 등록
-        // answer 전송
-        createAnswer(data.sdp);
-      }
-    });
-    client.current!.subscribe(
-      `/sub/room/${roomId}/answer`,
-      async ({ body }) => {
-        const data = JSON.parse(body);
-        console.log("Get Answer" + data.sender + ":" + user);
-        // 내가 만든 answer가 아닐때
-        if (data.sender !== user) {
+    client.current!.subscribe(`/sub/room/${roomId}`, async ({ body }) => {
+      const content = JSON.parse(body);
+      console.log("content", content);
+      console.log("TYPE: " + content.type);
+      switch (content.type) {
+        case "JOIN":
+          if (content.allUsers.length > 0) {
+            console.log("방 참가: " + roomId);
+            createOffer();
+          } else {
+            console.log("방 생성: " + roomId);
+          }
+          break;
+        case "OFFER":
+          console.log("GET OFFER: ", content.sdp);
           // remote description 등록
-          // answer 등록
-          if (!pcRef.current) return;
-          await pcRef.current.setRemoteDescription(data.answer);
-        }
-      }
-    );
-    client.current!.subscribe(`/sub/room/${roomId}/ice`, ({ body }) => {
-      const data = JSON.parse(body);
-      console.log("Get ice" + data.sender + ":" + user);
-      // 내가 만든 오퍼가 아닐때
-      if (data.sender !== user) {
-        // remote description 등록
-        // ice 등록
-        pcRef.current!.addIceCandidate(data.ice);
+          // answer 전송
+          if (content.from !== user) {
+            createAnswer(content.sdp);
+          }
+
+          break;
+        case "ANSWER":
+          console.log("GET ANSWER: ", content.sdp);
+          if (content.from !== user) {
+            if (pcRef.current) {
+              await pcRef.current.setRemoteDescription(content.sdp);
+            }
+          }
+          break;
+        case "CANDIDATE":
+          console.log("GET ICE CANDIDATE: ", content.candidate);
+          if (content.from !== user) {
+            if (pcRef.current) {
+              // let candidate = new RTCIceCandidate(content.candidate);
+              await pcRef.current.addIceCandidate(content.candidate);
+            }
+          }
+
+          break;
       }
     });
   };
 
   const connectHandler = () => {
     client.current = Stomp.over(() => {
-      const sock = new SockJS("http://172.30.1.12:8080/signal");
+      const sock = new SockJS("https://localhost:8080/signal");
       return sock;
     });
     client.current.connect({}, () => {
@@ -214,19 +201,18 @@ const Page = () => {
         body: JSON.stringify({
           type: "JOIN",
           roomId: roomId,
-          sender: user,
+          from: user,
         }),
       });
     });
   };
   useEffect(() => {
+    pcRef.current = new RTCPeerConnection();
     // 소켓 연결
     connectHandler();
     // peer 커넥션 생성
     // peerConnection 생성
     // iceServer는 stun 설정이고 google의 public stun server 사용
-    pcRef.current = new RTCPeerConnection();
-
     getMedia();
   }, [client.current]);
   return (
@@ -237,7 +223,6 @@ const Page = () => {
       <button onClick={handleDisConnect}>DisConnect</button>
 
       <input value={text} onChange={(e) => setText(e.target.value)} />
-      <button onClick={sendHandler}>Send</button>
       <div>{callBackData}</div>
       <div>내비디오</div>
       <video

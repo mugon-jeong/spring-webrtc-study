@@ -24,8 +24,8 @@ app.prepare().then(() => {
   const https = require("https");
   const fs = require("fs");
   const options = {
-    key: fs.readFileSync("./localhost-key.pem"),
-    cert: fs.readFileSync("./localhost.pem"),
+    key: fs.readFileSync("./172.30.1.12-key.pem"),
+    cert: fs.readFileSync("./172.30.1.12.pem"),
   };
   https
     .createServer(options, function (req, res) {
