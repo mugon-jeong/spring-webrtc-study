@@ -24,3 +24,23 @@ create-answer 과정이 끝나면 icecandidate로 네트워크 정보를 교환�
     받는 쪽에서 해당 candidate를 저장합니다. (addICECandidate)
 
 이렇게 해서 두 피어간의 연결이 완료
+
+# Kurento media server
+```shell
+## linux
+docker run -d --name kurento --network host \
+    kurento/kurento-media-server:7.0.0
+    
+## mac or windows
+docker run --rm \
+    -p 8888:8888/tcp \
+    -p 5000-5050:5000-5050/udp \
+    -e KMS_MIN_PORT=5000 \
+    -e KMS_MAX_PORT=5050 \
+    kurento/kurento-media-server:7.0.0
+```
+
+## spring vm options
+```shell
+-Dkms.url=ws://<KMS IP>:<PORT>/kurento
+```
