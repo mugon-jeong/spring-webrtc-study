@@ -32,7 +32,7 @@ docker run -d --name kurento --network host \
     kurento/kurento-media-server:7.0.0
     
 ## mac or windows
-docker run --rm \
+docker run --rm -d \
     -p 8888:8888/tcp \
     -p 5000-5050:5000-5050/udp \
     -e KMS_MIN_PORT=5000 \
@@ -43,4 +43,22 @@ docker run --rm \
 ## spring vm options
 ```shell
 -Dkms.url=ws://<KMS IP>:<PORT>/kurento
+```
+
+
+## turn
+- run
+```shell
+docker run -d -p 3478:3478 -p 3478:3478/udp -p 5349:5349 -p 5349:5349/udp -e LISTENING_PORT=3478 -e REALM=kurento.org -e USER=user -e PASSWORD=s3cr3t --name kurento-coturn kurento/coturn-auth
+```
+```shell
+docker run -ti --rm --net=host -e LISTENING_PORT=3478 -e REALM=kurento.org -e USER=user -e PASSWORD=s3cr3t --name kurento-coturn kurento/coturn-auth
+```
+- create user
+```shell
+docker exec -ti coturn turnadmin -a -b /var/local/turndb -u user -r kurento.org -p s3cr3t
+```
+- delete user
+```shell
+docker exec -ti coturn turnadmin -d -b /var/local/turndb -u user -r kurento.org
 ```

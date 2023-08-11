@@ -45,7 +45,7 @@ public class KurentoHandler extends TextWebSocketHandler {
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         JsonObject jsonObject = gson.fromJson(message.getPayload(), JsonObject.class);
-        log.debug("Incoming message from session '{}' : {}", session.getId(), jsonObject);
+        log.info("Incoming message from session '{}' : {}", session.getId(), jsonObject);
 
         switch (jsonObject.get("id").getAsString()) {
             case PRESENTER -> {
@@ -89,6 +89,7 @@ public class KurentoHandler extends TextWebSocketHandler {
     }
 
     private synchronized void viewer(WebSocketSession session, JsonObject jsonObject) throws IOException {
+        log.info("Start Viewer process");
         if (presenterUserSession == null || presenterUserSession.getWebRtcEndpoint() == null) {
             KurentoMessage message = KurentoMessage.builder()
                     .id(VIEWER_RESPONSE)
@@ -112,6 +113,7 @@ public class KurentoHandler extends TextWebSocketHandler {
             nextWebRtc.addIceCandidateFoundListener(new EventListener<IceCandidateFoundEvent>() {
                 @Override
                 public void onEvent(IceCandidateFoundEvent event) {
+                    log.info("Send ice from viewer");
                     KurentoMessage message = KurentoMessage.builder()
                             .id(ICE_CANDIDATE_RESPONSE)
                             .candidate(event.getCandidate())
@@ -124,8 +126,10 @@ public class KurentoHandler extends TextWebSocketHandler {
 
             viewer.setWebRtcEndpoint(nextWebRtc);
             presenterUserSession.getWebRtcEndpoint().connect(nextWebRtc);
+            log.info("Create offer from viewer");
             String sdpOffer = jsonObject.getAsJsonPrimitive("sdpOffer").getAsString();
             String sdpAnswer = nextWebRtc.processOffer(sdpOffer);
+            log.info("Create answer from viewer");
             KurentoMessage message = KurentoMessage.builder()
                     .id(VIEWER_RESPONSE)
                     .response(ACCEPTED)
@@ -140,6 +144,7 @@ public class KurentoHandler extends TextWebSocketHandler {
 
 
     private synchronized void presenter(WebSocketSession session, JsonObject jsonObject) throws IOException {
+        log.info("Start Presenter process");
         if (presenterUserSession == null) {
             log.info("Create presenterUserSession");
             presenterUserSession = new UserSession(session);
@@ -149,6 +154,7 @@ public class KurentoHandler extends TextWebSocketHandler {
             presenterWebRtc.addIceCandidateFoundListener(new EventListener<IceCandidateFoundEvent>() {
                 @Override
                 public void onEvent(IceCandidateFoundEvent event) {
+                    log.info("Send ice from presenter");
                     KurentoMessage message = KurentoMessage.builder()
                             .id(ICE_CANDIDATE_RESPONSE)
                             .candidate(event.getCandidate())
@@ -158,9 +164,10 @@ public class KurentoHandler extends TextWebSocketHandler {
                     }
                 }
             });
-
+            log.info("Create offer from presenter");
             String sdpOffer = jsonObject.getAsJsonPrimitive("sdpOffer").getAsString();
             String sdpAnswer = presenterWebRtc.processOffer(sdpOffer);
+            log.info("Send anser from presenter");
             KurentoMessage message = KurentoMessage.builder()
                     .id(PRESENTER_RESPONSE)
                     .response(ACCEPTED)
