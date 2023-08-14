@@ -172,7 +172,6 @@ const Page = () => {
 
 
     useEffect(() => {
-
         socket.current = new WebSocket("ws://172.30.1.12:8080/kurento");
         socket.current.onopen = () => {
             console.log("Connected to the signaling server");

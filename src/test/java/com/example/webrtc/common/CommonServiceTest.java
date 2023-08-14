@@ -1,5 +1,9 @@
 package com.example.webrtc.common;
 
+import com.example.webrtc.socket.kurento_multi.KurentoMultiMessage;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -9,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
+@Slf4j
 public class CommonServiceTest {
     @Test
     void mapTest(){
@@ -28,6 +32,18 @@ public class CommonServiceTest {
         assertThat(rooms.get("roomA").size()).isEqualTo(2);
         assertThat(rooms.get("roomA").get(0)).isEqualTo("userA");
         assertThat(rooms.get("roomA").get(1)).isEqualTo("userB");
+
+    }
+
+    @Test
+    void toJsonTest() throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        KurentoMultiMessage message = KurentoMultiMessage.builder()
+                .id("iceCandidate")
+                .name("name")
+                .build();
+
+        log.info("toJson: {}", message.toJson(objectMapper));
 
     }
 }
