@@ -12,12 +12,13 @@ const Page = ({params}: { params: { user: string, room: string } }) => {
     const socket = useRef<WebSocket>();
     const [users, setUsers] = useState<Array<{
         id: string,
-        stream: MediaStream,
+        stream: readonly MediaStream,
         pc: RTCPeerConnection,
     }>>([]);
     const receiveVideo = ({sender}: {
         sender: string
     }) => {
+        console.log(sender+" : receive pc 생성")
         const pc = new RTCPeerConnection({
             iceServers: [
                 {
@@ -39,18 +40,17 @@ const Page = ({params}: { params: { user: string, room: string } }) => {
             })
             .then(() => {
                 // offer 전달
-                console.log("From Receiver send Offer: " + sender)
+                console.log(sender + "send receive Offer")
                 sendMessage({
                     id: "receiveVideoFrom",
                     name: sender,
                     sdpOffer: pc!.localDescription!.sdp,
                 });
-                console.log("sent the offer");
             });
 
         pc.ontrack = (e) => {
-            console.log("Received stream store in users")
-            setUsers((oldUsers) => oldUsers.filter((participant) => participant.id !== user));
+            console.log(sender+" : Add receive stream store" + e.streams[0].getTracks())
+            setUsers((oldUsers) => oldUsers.filter((participant) => participant.id !== sender));
             setUsers((oldUsers) => [
                 ...oldUsers,
                 {
@@ -92,7 +92,6 @@ const Page = ({params}: { params: { user: string, room: string } }) => {
                     name: sender,
                     sdpOffer: pc!.localDescription!.sdp,
                 });
-                console.log("sent the offer");
             });
 
         // 로컬의 미디어 스트림이 존재하면 PeerConnection에 추가해줍니다.
@@ -175,25 +174,26 @@ const Page = ({params}: { params: { user: string, room: string } }) => {
                     const pc:RTCPeerConnection = pcs[parsedMessage.name];
                     if (pc) {
                         console.log(parsedMessage.name+" 의 answer 등록")
-                        pc.setRemoteDescription({type: "answer", sdp: parsedMessage.sdpAnswer})
-                        pc.onicecandidate = (e) => {
-                            console.log("ice", e.candidate);
-                            if (e.candidate) {
-                                if (!socket.current) {
-                                    return;
+                        pc.setRemoteDescription({type: "answer", sdp: parsedMessage.sdpAnswer}).then(()=>{
+                            pc.onicecandidate = (e) => {
+                                console.log("ice", e.candidate);
+                                if (e.candidate) {
+                                    if (!socket.current) {
+                                        return;
+                                    }
+                                    console.log("recv candidate");
+                                    sendMessage({
+                                        id: "onIceCandidate",
+                                        candidate: {
+                                            candidate: e.candidate.candidate,
+                                            sdpMid: e.candidate.sdpMid,
+                                            sdpMLineIndex: e.candidate.sdpMLineIndex
+                                        },
+                                        name: parsedMessage.name
+                                    });
                                 }
-                                console.log("recv candidate");
-                                sendMessage({
-                                    id: "onIceCandidate",
-                                    candidate: {
-                                        candidate: e.candidate.candidate,
-                                        sdpMid: e.candidate.sdpMid,
-                                        sdpMLineIndex: e.candidate.sdpMLineIndex
-                                    },
-                                    name: parsedMessage.name
-                                });
-                            }
-                        };
+                            };
+                        })
                     }
                     break;
                 case 'iceCandidate':
