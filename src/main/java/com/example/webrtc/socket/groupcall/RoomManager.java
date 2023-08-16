@@ -47,15 +47,15 @@ public class RoomManager {
    *         accessed
    */
   public Room getRoom(String roomName) {
-    log.debug("Searching for room {}", roomName);
+    log.info("Searching for room {}", roomName);
     Room room = rooms.get(roomName);
 
     if (room == null) {
-      log.debug("Room {} not existent. Will create now!", roomName);
+      log.info("Room {} not existent. Will create now!", roomName);
       room = new Room(roomName, kurento.createMediaPipeline());
       rooms.put(roomName, room);
     }
-    log.debug("Room {} found!", roomName);
+    log.info("Room {} found!", roomName);
     return room;
   }
 

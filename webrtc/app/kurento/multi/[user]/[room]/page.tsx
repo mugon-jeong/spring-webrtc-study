@@ -2,7 +2,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import useParticipantMap from "@/app/kurento/multi/[user]/[room]/useParticipantMap";
 import KurentoVideo from "@/app/kurento/multi/[user]/[room]/kurento_video";
-
+const serverURL = "172.30.1.12"
 let localStream: MediaStream;
 let pcs: any;
 const Page = ({params}: { params: { user: string, room: string } }) => {
@@ -12,7 +12,7 @@ const Page = ({params}: { params: { user: string, room: string } }) => {
     const socket = useRef<WebSocket>();
     const [users, setUsers] = useState<Array<{
         id: string,
-        stream: readonly MediaStream,
+        stream: MediaStream,
         pc: RTCPeerConnection,
     }>>([]);
     const receiveVideo = ({sender}: {
@@ -24,7 +24,7 @@ const Page = ({params}: { params: { user: string, room: string } }) => {
                 {
                     username: 'user',
                     credential: 's3cr3t',
-                    urls: 'turn:192.168.35.47:3478?transport=tcp'
+                    urls: `turn:${serverURL}:3478?transport=tcp`
                 },
             ],
         });
@@ -49,7 +49,7 @@ const Page = ({params}: { params: { user: string, room: string } }) => {
             });
 
         pc.ontrack = (e) => {
-            console.log(sender+" : Add receive stream store" + e.streams[0].getTracks())
+            console.log(sender+" : Add receive stream store" + e.streams[0].getVideoTracks())
             setUsers((oldUsers) => oldUsers.filter((participant) => participant.id !== sender));
             setUsers((oldUsers) => [
                 ...oldUsers,
@@ -71,7 +71,7 @@ const Page = ({params}: { params: { user: string, room: string } }) => {
                 {
                     username: 'user',
                     credential: 's3cr3t',
-                    urls: 'turn:192.168.35.47:3478?transport=tcp'
+                    urls: `turn:${serverURL}:3478?transport=tcp`
                 },
             ],
         });
@@ -141,7 +141,7 @@ const Page = ({params}: { params: { user: string, room: string } }) => {
         });
     }, []);
     useEffect(() => {
-        socket.current = new WebSocket("ws://192.168.35.47:8080/kurento");
+        socket.current = new WebSocket(`ws://${serverURL}:8080/kurento`);
         socket.current.onopen = () => {
             console.log("Connected to the signaling server");
             console.log(`Register user: ${user}, room: ${room}`);

@@ -1,0 +1,26 @@
+version: "3"
+services:
+  ksm:
+    image: kurento/kurento-media-server:7.0.0
+    container_name: kms
+    ports:
+      - "8888:8888/tcp"
+      - "5000-5050:5000-5050/udp"
+    environment:
+      - KMS_MIN_PORT=5000
+      - KMS_MAX_PORT=5050
+      - KMS_TURN_URL=kurento:kurento@172.30.1.12:3478
+  coturn:
+    build: coturn/
+    container_name: coturn
+    ports:
+      - "3478:3478"
+      - "3478:3478/udp"
+      - "5349:5349"
+      - "5349:5349/udp"
+    environment:
+      - LISTENING_PORT=3478
+      - REALM=kurento.org
+      - USER=user
+      - PASSWORD=s3cr3t
+#    network_mode: "host"

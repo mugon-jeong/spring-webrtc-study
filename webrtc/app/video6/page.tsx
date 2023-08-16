@@ -150,7 +150,7 @@ const Page = () => {
         getUserMediaState = MEDIA_STATE.PENDING;
         // 시그널링 서버와 소켓 연결
         client.current = Stomp.over(() => {
-            const sock = new SockJS("http://192.168.35.47:8080/signal");
+            const sock = new SockJS("http://172.30.1.12:8080/signal");
             return sock;
         });
 

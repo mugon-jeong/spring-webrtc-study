@@ -1,7 +1,7 @@
 "use client";
 import {useEffect, useRef} from "react";
 
-const KurentoVideo = ({stream, name}: any) => {
+const KurentoVideo = ({stream, name}: {stream:MediaStream, name:string}) => {
     const ref = useRef<HTMLVideoElement>(null);
     useEffect(() => {
         if (ref.current) ref.current.srcObject = stream;

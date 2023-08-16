@@ -70,7 +70,7 @@ public class UserSession implements Closeable {
             session.sendMessage(new TextMessage(response.toString()));
           }
         } catch (IOException e) {
-          log.debug(e.getMessage());
+          log.info(e.getMessage());
         }
       }
     });
@@ -110,21 +110,21 @@ public class UserSession implements Closeable {
 
     log.trace("USER {}: SdpAnswer for {} is {}", this.name, sender.getName(), ipSdpAnswer);
     this.sendMessage(scParams);
-    log.debug("gather candidates");
+    log.info("gather candidates");
     this.getEndpointForUser(sender).gatherCandidates();
   }
 
   private WebRtcEndpoint getEndpointForUser(final UserSession sender) {
     if (sender.getName().equals(name)) {
-      log.debug("PARTICIPANT {}: configuring loopback", this.name);
+      log.info("PARTICIPANT {}: configuring loopback", this.name);
       return outgoingMedia;
     }
 
-    log.debug("PARTICIPANT {}: receiving video from {}", this.name, sender.getName());
+    log.info("PARTICIPANT {}: receiving video from {}", this.name, sender.getName());
 
     WebRtcEndpoint incoming = incomingMedia.get(sender.getName());
     if (incoming == null) {
-      log.debug("PARTICIPANT {}: creating new endpoint for {}", this.name, sender.getName());
+      log.info("PARTICIPANT {}: creating new endpoint for {}", this.name, sender.getName());
       incoming = new WebRtcEndpoint.Builder(pipeline).build();
 
       incoming.addIceCandidateFoundListener(new EventListener<IceCandidateFoundEvent>() {
@@ -140,7 +140,7 @@ public class UserSession implements Closeable {
               session.sendMessage(new TextMessage(response.toString()));
             }
           } catch (IOException e) {
-            log.debug(e.getMessage());
+            log.info(e.getMessage());
           }
         }
       });
@@ -148,7 +148,7 @@ public class UserSession implements Closeable {
       incomingMedia.put(sender.getName(), incoming);
     }
 
-    log.debug("PARTICIPANT {}: obtained endpoint for {}", this.name, sender.getName());
+    log.info("PARTICIPANT {}: obtained endpoint for {}", this.name, sender.getName());
     sender.getOutgoingWebRtcPeer().connect(incoming);
 
     return incoming;
@@ -159,10 +159,10 @@ public class UserSession implements Closeable {
   }
 
   public void cancelVideoFrom(final String senderName) {
-    log.debug("PARTICIPANT {}: canceling video reception from {}", this.name, senderName);
+    log.info("PARTICIPANT {}: canceling video reception from {}", this.name, senderName);
     final WebRtcEndpoint incoming = incomingMedia.remove(senderName);
 
-    log.debug("PARTICIPANT {}: removing endpoint for {}", this.name, senderName);
+    log.info("PARTICIPANT {}: removing endpoint for {}", this.name, senderName);
     incoming.release(new Continuation<Void>() {
       @Override
       public void onSuccess(Void result) throws Exception {
@@ -180,7 +180,7 @@ public class UserSession implements Closeable {
 
   @Override
   public void close() throws IOException {
-    log.debug("PARTICIPANT {}: Releasing resources", this.name);
+    log.info("PARTICIPANT {}: Releasing resources", this.name);
     for (final String remoteParticipantName : incomingMedia.keySet()) {
 
       log.trace("PARTICIPANT {}: Released incoming EP for {}", this.name, remoteParticipantName);
@@ -218,7 +218,7 @@ public class UserSession implements Closeable {
   }
 
   public void sendMessage(JsonObject message) throws IOException {
-    log.debug("USER {}: Sending message {}", name, message);
+    log.info("USER {}: Sending message {}", name, message);
     synchronized (session) {
       session.sendMessage(new TextMessage(message.toString()));
     }
